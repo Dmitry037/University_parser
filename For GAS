@@ -1,0 +1,78 @@
+function importSchedule() {
+  // ВАЖНО: Здесь мы МОДЕЛИРУЕМ получение данных от парсера.
+  // В реальном приложении вам нужно будет либо:
+  // 1. Встроить логику парсера ПРЯМО в скрипт GAS (это может быть сложно из-за ограничений GAS).
+  // 2. Разместить парсер на внешнем сервере и вызывать его из GAS через UrlFetchApp (рекомендуется).
+  // 3. Использовать промежуточный сервис (например, Google Cloud Functions), который будет запускать парсер и передавать данные в GAS.
+
+  // Замените этот пример на РЕАЛЬНЫЕ данные, полученные от вашего парсера.
+  const parsedSchedule = getMockSchedule(); // Используем функцию-заглушку
+
+  // Получаем календарь по умолчанию (можно указать и другой календарь по ID).
+  const calendar = CalendarApp.getDefaultCalendar();
+
+  // Перебираем события, полученные от парсера.
+  for (const item of parsedSchedule) {
+    try {
+      // Преобразуем время в объект Date.
+      // ВАЖНО: Вам нужно адаптировать этот код под формат времени, который возвращает ваш парсер!
+      // Предполагаем, что время в формате "ЧЧ:ММ".
+      const [hours, minutes] = item.time.split(':').map(Number);
+      const now = new Date();  //Берем текущую дату
+
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Добавляем 1 час (60 минут * 60 секунд * 1000 миллисекунд).  Измените, если нужно.
+
+      // Создаем событие.
+      const event = calendar.createEvent(
+        item.title,  // Название события.
+        startDate, // Дата и время начала.
+        endDate,   // Дата и время окончания.
+        {
+          location: item.location, // Местоположение.
+          //  description: 'Описание события', // Можно добавить описание (необязательно).
+          //  guests: 'email1@example.com,email2@example.com', // Можно добавить гостей (необязательно).
+          //  sendInvites: true, // Отправлять приглашения гостям (необязательно).
+        }
+      );
+
+      Logger.log(`Создано событие: ${event.getTitle()}`); // Логируем создание события.
+
+    } catch (error) {
+      Logger.log(`Ошибка при создании события: ${error}`); // Логируем ошибки.
+    }
+  }
+}
+
+
+function getScheduleFromExternalParser() {
+  const url = 'https://your-parser-url.com/api/schedule'; // URL вашего парсера.
+  const response = UrlFetchApp.fetch(url);
+  const json = response.getContentText();
+  const schedule = JSON.parse(json);
+  return schedule;
+}
+
+// Функция для запуска импорта по расписанию (триггер).
+// Вы можете настроить триггер в редакторе скриптов (значок часов).
+function createTimeDrivenTriggers() {
+    //Удаляем все триггеры, чтобы не создавать дубликаты
+  const projectTriggers = ScriptApp.getProjectTriggers();
+  for (const trigger of projectTriggers) {
+      ScriptApp.deleteTrigger(trigger)
+  }
+  // Запускаем функцию importSchedule каждый день в 8 утра.
+  ScriptApp.newTrigger('importSchedule')
+    .timeBased()
+    .everyDays(1) // Каждый день
+    .atHour(8)   // В 8 утра
+    .create();
+}
+
+//Функция, для удаления триггеров (если нужно)
+function deleteTriggers(){
+      const projectTriggers = ScriptApp.getProjectTriggers();
+  for (const trigger of projectTriggers) {
+      ScriptApp.deleteTrigger(trigger)
+  }
+}
