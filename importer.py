@@ -1,4 +1,10 @@
+# Не применимо для меня и тех кому в падлу обходить блокировку google cloude
+
+
 # Очень упрощенный пример создания события (без обработки ошибок и аутентификации)
+
+
+
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
