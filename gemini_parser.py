@@ -1,13 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 def get_schedule(url):
-    # 1. Получаем HTML-код страницы
+    # Получаем HTML-код страницы
     response = requests.get(url)
     response.raise_for_status()  # Проверяем, что запрос успешен (статус 200 OK)
     return response.text
 
-url = ""
 
 def parse_schedule(html_content):
     """
@@ -126,8 +126,10 @@ def parse_schedule(html_content):
     return combined_schedule
 
 
-html_content = get_schedule(url)
-schedule = parse_schedule(html_content)
+our_url = ''
+
+our_html_content = get_schedule(our_url)
+schedule = parse_schedule(our_html_content)
 
 
 for time_slot, lessons in schedule.items():
