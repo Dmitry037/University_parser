@@ -6,7 +6,7 @@ FROM python:3.9
 WORKDIR /code
 
 # Копируем файлы проекта внутрь контейнера
-COPY ./ /code/
+COPY .. /code/
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt

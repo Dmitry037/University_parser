@@ -1,0 +1,22 @@
+version: '3.9'  # Или другая подходящая версия
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"  # Пробрасываем порт
+    depends_on: #Если нужна база
+      - db #Если нужна база
+  db: #Если нужна база
+    image: postgres:13 #Если нужна база
+    volumes: #Если нужна база
+      - postgres_data:/var/lib/postgresql/data/ #Если нужна база
+    environment: #Если нужна база
+      - POSTGRES_USER=example #Если нужна база
+      - POSTGRES_PASSWORD=example #Если нужна база
+      - POSTGRES_DB=example #Если нужна база
+volumes: #Если нужна база
+  postgres_data: #Если нужна база

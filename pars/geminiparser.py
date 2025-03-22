@@ -33,8 +33,11 @@ def parse_schedule(html_content):
         }
     """
     soup = BeautifulSoup(html_content, 'html.parser')
+    print(f"Soup: {soup}")  # Выведи весь объект soup (для отладочки)
     schedule_div = soup.find('div', class_='schedule')
+    print(f"schedule_div: {schedule_div}")  # Выведи schedule_div (для отладочки)
     schedule_items = schedule_div.find_all('div', class_='schedule__item')
+
 
     # 1. Извлекаем заголовки (дни недели и даты)
     weekdays = []
@@ -128,10 +131,13 @@ def parse_schedule(html_content):
 
 our_url = ''
 
-our_html_content = get_schedule(our_url)
-schedule = parse_schedule(our_html_content)
+#our_html_content = get_schedule(our_url)
 
 
+
+
+
+"""
 for time_slot, lessons in schedule.items():
     print(f"Время: {time_slot}")
     for lesson in lessons:
@@ -142,3 +148,4 @@ for time_slot, lessons in schedule.items():
             print(f"    Место: {lesson.get('place', '')}")
             print(f"    Преподаватель: {lesson.get('teacher', '')}")
             print(f"    Группы: {', '.join(lesson.get('groups', []))}")
+"""

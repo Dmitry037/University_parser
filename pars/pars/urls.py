@@ -20,5 +20,5 @@ from django.urls import include, path  # Добавляем include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('app.urls')),  # Подключаем URL-маршруты нашего приложения
+    path('api/', include('paranoic.urls')),  # Подключаем URL-маршруты нашего приложения
 ]
