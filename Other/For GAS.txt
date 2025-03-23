@@ -85,19 +85,19 @@ function importSchedule() {
 
 
           //определяем цвет
-          let color;
+          let colorId;
           switch (item.type) {
             case 'Лекция':
-              color = '10';
+              colorId = '10';
               break;
             case 'Практика':
-              color = '7';
+              colorId = '7';
               break;
             case 'Лабораторная':
-              color = '3';
+              colorId = '3';
               break;
             default:
-              color = '6';
+              colorId = '6';
             // Код, если выражение не совпало ни с одним из значений
           }
 
@@ -108,9 +108,11 @@ function importSchedule() {
             endDate,
             {
               location: item.place,
-              colorId: color,
+              description: `Тип занятия: ${item.type}\nМесто: ${item.place}`,
             }
           );
+
+          event.setColor(colorId);
 
           Logger.log(`Создано событие: ${event.getTitle()} (${dayOfWeek})`);
           Logger.log("colorId:", color);
