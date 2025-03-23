@@ -120,8 +120,8 @@ def parse_schedule(html_content):
 
     return schedule_by_weekday
 
-
-our_url = '' #здесь будет ссылка
+week = 30
+our_url = f'https://ssau.ru/rasp?groupId=1214268581&selectedWeek={week}&selectedWeekday=1' #здесь будет ссылка
 # пример ссылки https://ssau.ru/rasp?groupId=530996285&selectedWeek=29&selectedWeekday=3
 #our_html_content = get_schedule(our_url)
 
