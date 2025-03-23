@@ -120,24 +120,10 @@ def parse_schedule(html_content):
 
     return schedule_by_weekday
 
-week = 30
-our_url = f'https://ssau.ru/rasp?groupId=1214268581&selectedWeek={week}&selectedWeekday=1' #здесь будет ссылка
-# пример ссылки https://ssau.ru/rasp?groupId=530996285&selectedWeek=29&selectedWeekday=3
-#our_html_content = get_schedule(our_url)
 
 
 
 
 
-"""
-for time_slot, lessons in schedule.items():
-    print(f"Время: {time_slot}")
-    for lesson in lessons:
-        if lesson:  # Проверяем, есть ли информация о занятии
-            print(f"  День недели: {lesson.get('weekday', '')}, Дата: {lesson.get('date', '')}")
-            print(f"    Дисциплина: {lesson.get('discipline', '')}")
-            print(f"    Тип: {lesson.get('type', '')}")
-            print(f"    Место: {lesson.get('place', '')}")
-            print(f"    Преподаватель: {lesson.get('teacher', '')}")
-            print(f"    Группы: {', '.join(lesson.get('groups', []))}")
-"""
+
+
