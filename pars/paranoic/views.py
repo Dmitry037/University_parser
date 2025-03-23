@@ -14,9 +14,9 @@ def my_info_view(request):
         except Exception as e:
             return f"Error: An error occurred: {e}"
         pass #для отладочки
-    our_html_content = read_html_from_file('/structure.html')
+    our_html_content = read_html_from_file('structure.html')
 
     ### warring only for test!!!!
-    print(f"HTML content: {our_html_content[:200]}...") #для отладочки
+    print(f"HTML content: {our_html_content[:10]}...") #для отладочки
     data = parse_schedule(our_html_content)
     return JsonResponse(data)

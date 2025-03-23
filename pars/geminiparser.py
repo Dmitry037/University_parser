@@ -11,126 +11,111 @@ def get_schedule(url):
 
 def parse_schedule(html_content):
     """
-    Извлекает расписание занятий из HTML-структуры.
+    Извлекает расписание из HTML-кода и возвращает его в структурированном формате.
 
     Args:
-        html_content: HTML-код страницы с расписанием.
+        html_content: Строка, содержащая HTML-код расписания.
 
     Returns:
-        Словарь, где ключи - время, а значения - список словарей с информацией о занятиях
-        в это время по дням недели.  Если в какой-то день занятий нет,
-        то в списке для этого дня будет пустой словарь {}.
-        Пример:
-        {
-            '08:00 - 09:35': [
-                {'weekday': 'понедельник', 'date': '17.03.2025', 'discipline': 'Военная кафедра', 'type': 'Практика', 'place': 'Военная кафедра - 4', 'teacher': 'Преподаватели Военной Кафедры', 'groups': ['2505-240502D', '2507-240502D', '2508-240502D']},
-                {}, # Вторник - нет занятий
-                {'weekday': 'среда', 'date': '19.03.2025', 'discipline': '...', 'type': '...', ...},
-                ...
-            ],
-            '09:45 - 11:20': [ ... ],
-            ...
-        }
+        Словарь, представляющий расписание.  Ключи - временные интервалы (строки).
+        Значения - списки словарей (по одному словарю на каждый день недели).
+        Каждый словарь содержит информацию о занятии: 'weekday', 'discipline', 'type', 'place', 'teacher', 'groups', 'comment'.
+        Если занятий нет, то словарь пустой.
     """
+
     soup = BeautifulSoup(html_content, 'html.parser')
-    print(f"Soup: {soup}")  # Выведи весь объект soup (для отладочки)
-    schedule_div = soup.find('div', class_='schedule')
-    print(f"schedule_div: {schedule_div}")  # Выведи schedule_div (для отладочки)
-    schedule_items = schedule_div.find_all('div', class_='schedule__item')
+    schedule_items_container = soup.find('div', class_='schedule__items')
+    schedule_items = schedule_items_container.find_all('div', class_='schedule__item',
+                                                       recursive=False)  # Только непосредственные дочерние элементы
+    schedule_time_divs = schedule_items_container.find_all('div', class_='schedule__time')
 
-
-    # 1. Извлекаем заголовки (дни недели и даты)
     weekdays = []
-    dates = []
+    schedule = {}
+
+    # Извлечение дней недели
     for item in schedule_items:
         if 'schedule__head' in item.get('class', []):
             weekday_div = item.find('div', class_='schedule__head-weekday')
-            date_div = item.find('div', class_='schedule__head-date')
             if weekday_div:
                 weekdays.append(weekday_div.text.strip())
-            if date_div:
-                dates.append(date_div.text.strip())
 
-    # 2. Извлекаем время
-    times = []
-    time_divs = schedule_div.find_all('div', class_='schedule__time')
-    for time_div in time_divs:
-        time_items = time_div.find_all('div', class_='schedule__time-item')
-        for time_item in time_items:
-            times.append(time_item.text.strip())
+    # Проверка на пустой список weekdays
+    if not weekdays:
+        return {}  # Возвращаем пустой словарь, если дни недели не найдены
 
-    # 3. Извлекаем информацию о занятиях и группируем по времени
-    schedule = {}
     time_index = 0
-    day_index = 0
+    lesson_index = len(weekdays)  # Индекс, с которого начинаются занятия
 
-    for item in schedule_items:
-        if 'schedule__time' in item.get('class', []):
-            # Переход к следующему временному блоку
-
-            continue
-
-        if 'schedule__lesson' in item.findChildren(recursive=False)[0].get('class', []):
-            lesson_info = {}
-
-            lesson_type_div = item.find('div', class_='schedule__lesson-type-chip')
-            lesson_info['type'] = lesson_type_div.text.strip() if lesson_type_div else ''
-
-            discipline_div = item.find('div', class_='schedule__discipline')
-            lesson_info['discipline'] = discipline_div.text.strip() if discipline_div else ''
-
-            place_div = item.find('div', class_='schedule__place')
-            lesson_info['place'] = place_div.text.strip() if place_div else ''
-
-            teacher_div = item.find('div', class_='schedule__teacher')
-            lesson_info['teacher'] = teacher_div.text.strip() if teacher_div else ''
-
-            groups_div = item.find('div', class_='schedule__groups')
-            groups = []
-            if groups_div:
-                for link in groups_div.find_all('a', class_='schedule__group'):
-                    groups.append(link.text.strip())
-                lesson_info['groups'] = groups
+    while lesson_index < len(schedule_items):
+        # Извлечение временного интервала
+        if time_index < len(schedule_time_divs):
+            time_items = schedule_time_divs[time_index].find_all('div', class_='schedule__time-item')
+            if len(time_items) == 2:
+                start_time = time_items[0].text.strip()
+                end_time = time_items[1].text.strip()
+                time_range = f"{start_time} - {end_time}"
+                schedule[time_range] = []
             else:
-                lesson_info['groups'] = []
-            if weekdays:
-                lesson_info['weekday'] = weekdays[day_index % len(weekdays)]
-            if dates:
-                lesson_info['date'] = dates[day_index % len(weekdays)]
-            if times[time_index] not in schedule:
-                schedule[times[time_index]] = []
+                # Обработка некорректного формата времени
+                time_index += 1
+                continue
 
-            schedule[times[time_index]].append(lesson_info)
-            day_index += 1
+        else:
+            break  # Выход из цикла если закончились временные интервалы
 
-        elif not item.findChildren(recursive=False)[0].get('class') or item.findChildren(recursive=False)[0].get(
-                'class') == ['schedule__item_show']:
-            # Пустой элемент - нет занятий в этот день для данного времени
-            if times[time_index] not in schedule:
-                schedule[times[time_index]] = []
+        # Извлечение занятий для данного временного интервала
+        for weekday_index in range(len(weekdays)):
+            current_lesson_item = schedule_items[lesson_index + weekday_index]
 
-            schedule[times[time_index]].append({})  # Добавляем пустой словарь
-            day_index += 1
-        if day_index > 0 and day_index % len(weekdays) == 0:
-            time_index += 1
-            if time_index >= len(times):
-                break
-            day_index = 0
+            if 'schedule__lesson' in [tag.name for tag in current_lesson_item.find_all(recursive=False)]:
+                lesson_div = current_lesson_item.find('div', class_='schedule__lesson')
+                lesson_info = {}
+                lesson_info['weekday'] = weekdays[weekday_index]
 
-    # 4. Объединяем начальное и конечное время в один слот.
-    combined_schedule = {}
-    for i in range(0, len(times), 2):
-        start_time = times[i]
-        end_time = times[i + 1] if i + 1 < len(times) else ""
-        combined_time = f"{start_time} - {end_time}"
-        # Используем данные из первого найденного
-        combined_schedule[combined_time] = schedule.get(start_time, [])
+                # Извлечение типа занятия
+                lesson_type_chip = lesson_div.find('div', class_='schedule__lesson-type-chip')
+                lesson_info['type'] = lesson_type_chip.text.strip() if lesson_type_chip else ''
 
-    return combined_schedule
+                # Извлечение информации о занятии
+                lesson_info_div = lesson_div.find('div', class_='schedule__lesson-info')
+                if lesson_info_div:
+                    discipline = lesson_info_div.find('div', class_='schedule__discipline')
+                    lesson_info['discipline'] = discipline.text.strip() if discipline else ''
+
+                    place = lesson_info_div.find('div', class_='schedule__place')
+                    lesson_info['place'] = place.text.strip() if place else ''
+
+                    teacher = lesson_info_div.find('div', class_='schedule__teacher')
+                    lesson_info['teacher'] = teacher.text.strip() if teacher else ''
+
+                    groups_container = lesson_info_div.find('div', class_='schedule__groups')
+                    groups = []
+                    if groups_container:
+                        for group_link in groups_container.find_all('a', class_='schedule__group'):
+                            groups.append(group_link.text.strip())
+                        if not groups:  # Handle cases where groups are empty spans
+                            for group_span in groups_container.find_all('span', class_='caption-text'):
+                                if group_span.text.strip():
+                                    groups.append(group_span.text.strip())
+                    lesson_info['groups'] = groups
+
+                    comment = lesson_info_div.find('div', class_='schedule__comment')
+                    lesson_info['comment'] = comment.text.strip() if comment else ''
+
+                schedule[time_range].append(lesson_info)
+
+            else:
+                # Добавление пустого словаря, если занятия нет
+                schedule[time_range].append({})
+
+        lesson_index += len(weekdays)
+        time_index += 1
+
+    return schedule
 
 
-our_url = ''
-
+our_url = '' #здесь будет ссылка
+# пример ссылки https://ssau.ru/rasp?groupId=530996285&selectedWeek=29&selectedWeekday=3
 #our_html_content = get_schedule(our_url)
 
 
