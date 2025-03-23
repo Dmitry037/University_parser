@@ -1,0 +1,237 @@
+function importSchedule() {
+  //  const parsedSchedule = getScheduleFromExternalParser(); // Раскомментируйте, когда будет реальный парсер.
+  const parsedSchedule = getMockSchedule(); // Замените на getScheduleFromExternalParser() при реальном парсере.
+
+  if (!parsedSchedule) {
+    Logger.log('Не удалось получить расписание.');
+    return;
+  }
+
+  const calendar = CalendarApp.getDefaultCalendar();
+  const today = new Date();
+  const currentDayOfWeek = today.getDay(); // Получаем текущий день недели (0-Воскресенье, 1-Понедельник, ..., 6-Суббота)
+
+    // Словарь для соответствия дней недели
+    const dayOfWeekMap = {
+        'понедельник': 1,
+        'вторник': 2,
+        'среда': 3,
+        'четверг': 4,
+        'пятница': 5,
+        'суббота': 6,
+        'воскресенье': 0, // В JavaScript воскресенье - 0
+    };
+
+
+  // Перебираем дни недели
+  for (const dayOfWeek in parsedSchedule) {
+    if (parsedSchedule.hasOwnProperty(dayOfWeek)) {
+      const eventsForDay = parsedSchedule[dayOfWeek];
+
+      //Определеяем день недели
+      const targetDayOfWeek = dayOfWeekMap[dayOfWeek.toLowerCase()];
+
+        if(targetDayOfWeek === undefined){
+            Logger.log(`Неизвестный день недели: ${dayOfWeek}`);
+            continue;
+        }
+
+      // Вычисляем разницу в днях.
+      let dayOffset = targetDayOfWeek - currentDayOfWeek;
+
+       // Если целевой день на этой неделе уже прошел, добавляем 7 дней (переходим на следующую неделю).
+       if (dayOffset < 0) {
+          dayOffset += 7;
+        }
+
+
+      // Перебираем события в текущем дне
+      for (const item of eventsForDay) {
+        try {
+          // Парсим время начала и окончания
+          const [startTime, endTime] = item.time.split(' - ');
+          const [startHours, startMinutes] = startTime.split(':').map(Number);
+          const [endHours, endMinutes] = endTime.split(':').map(Number);
+
+          //Создаем копию сегодняшней даты
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() + dayOffset); // Устанавливаем правильную дату
+          startDate.setHours(startHours, startMinutes, 0, 0); // Устанавливаем время
+
+          const endDate = new Date(today);
+          endDate.setDate(today.getDate() + dayOffset);    // Устанавливаем правильную дату
+          endDate.setHours(endHours, endMinutes, 0, 0);      // Устанавливаем время
+
+          //Проверка на неправильные даты
+           if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            Logger.log(`Некорректный формат времени для события: ${item.discipline} в ${dayOfWeek}`);
+            continue; // Переходим к следующему событию
+            }
+
+          // Корректировка даты, если событие переходит на следующий день
+          if (endDate < startDate) {
+            endDate.setDate(endDate.getDate() + 1);
+          }
+
+
+
+          // Формируем название события
+          const title = `${item.type}: ${item.discipline}`;
+          Logger.log(title);
+          // затыкаем странную проблему костылём
+          let [type,trash] = title.split(":");
+          Logger.log("Type:", type);
+          let savedtype = type;
+
+
+          //определяем цвет
+          let color;
+          switch (item.type) {
+            case 'Лекция':
+              color = '10';
+              break;
+            case 'Практика':
+              color = '7';
+              break;
+            case 'Лабораторная':
+              color = '3';
+              break;
+            default:
+              color = '6';
+            // Код, если выражение не совпало ни с одним из значений
+          }
+
+          // Создаем событие
+          const event = calendar.createEvent(
+            title,
+            startDate,
+            endDate,
+            {
+              location: item.place,
+              colorId: color,
+            }
+          );
+
+          Logger.log(`Создано событие: ${event.getTitle()} (${dayOfWeek})`);
+          Logger.log("colorId:", color);
+
+        } catch (error) {
+          Logger.log(`Ошибка при создании события для ${item.discipline} в ${dayOfWeek}: ${error}`);
+        }
+      }
+    }
+  }
+}
+
+
+// Функция для получения расписания (заглушка)
+function getMockSchedule() {
+    return {
+        'понедельник': [
+          {
+            'time': '08:00 - 09:35',
+            'type': 'Практика',
+            'discipline': 'Военная кафедра',
+            'place': 'Военная кафедра - 4'
+          },
+          {
+            'time': '09:45 - 11:20',
+            'type': 'Практика',
+            'discipline': 'Военная кафедра',
+            'place': 'Военная кафедра - 4'
+          },
+          {
+            'time': '11:30 - 13:05',
+            'type': 'Практика',
+            'discipline': 'Военная кафедра',
+            'place': 'Военная кафедра - 4'
+          }
+        ],
+        'среда': [
+          {
+            'time': '08:00 - 09:35',
+            'type': 'Лекция',
+            'discipline': 'Эксплуатация двигателей внутреннего\n                                        сгорания',
+            'place': '103 - 5'
+          },
+          {
+            'time': '09:45 - 11:20',
+            'type': 'Лекция',
+            'discipline': 'Технология производства двигателей\n                                        летательных аппаратов',
+            'place': '128 - 5'
+          }
+        ],
+        'четверг': [
+          {
+            'time': '08:00 - 09:35',
+            'type': 'Лекция',
+            'discipline': 'Особенности моделирования и оптимизации\n                                        рабочего процесса с помощью компьютерных технологий',
+            'place': '103 - 5'
+          },
+          {
+            'time': '09:45 - 11:20',
+            'type': 'Практика',
+            'discipline': 'Особенности моделирования и оптимизации\n                                        рабочего процесса с помощью компьютерных технологий',
+            'place': '103 - 5'
+          }
+        ],
+        'пятница': [
+          {
+            'time': '09:45 - 11:20',
+            'type': 'Лекция',
+            'discipline': 'Бизнес-управление инновационным\n                                        производством',
+            'place': '210 - 5'
+          },
+          {
+            'time': '11:30 - 13:05',
+            'type': 'Практика',
+            'discipline': 'Бизнес-управление инновационным\n                                        производством',
+            'place': '210 - 5'
+          }
+        ]
+      };
+}
+
+// Функция для получения данных от внешнего парсера (замените URL)
+function getScheduleFromExternalParser() {
+  const url = 'https://your-parser-url.com/api/schedule'; //  URL вашего парсера!
+  try {
+    const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true }); // Добавляем muteHttpExceptions
+    const statusCode = response.getResponseCode();
+
+    if (statusCode === 200) {
+      const json = response.getContentText();
+      const schedule = JSON.parse(json);
+      return schedule;
+    } else {
+      Logger.log(`Ошибка при запросе к парсеру.  Код ответа: ${statusCode}`);
+      // Можно добавить обработку разных кодов ошибок (404, 500 и т.д.)
+      return null;
+    }
+
+  } catch (error) {
+    Logger.log(`Ошибка при получении расписания от парсера: ${error}`);
+    return null; // Возвращаем null в случае ошибки
+  }
+}
+
+// Функция для создания триггера (оставляем как есть) -- ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ
+function createTimeDrivenTriggers() {
+  const projectTriggers = ScriptApp.getProjectTriggers();
+  for (const trigger of projectTriggers) {
+    ScriptApp.deleteTrigger(trigger);
+  }
+  ScriptApp.newTrigger('importSchedule')
+    .timeBased()
+    .everyDays(1)
+    .atHour(8)
+    .create();
+}
+
+// Функция для удаления триггеров (оставляем как есть)
+function deleteTriggers() {
+  const projectTriggers = ScriptApp.getProjectTriggers();
+  for (const trigger of projectTriggers) {
+    ScriptApp.deleteTrigger(trigger);
+  }
+}
