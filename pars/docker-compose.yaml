@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379" # Проброс порта для доступа к Redis извне (опционально, только для разработки)
+
+  web:
+    build: .. # Dockerfile находится в текущей директории
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app # Монтирование текущей директории в контейнер для разработки
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis # Django контейнер зависит от redis
+    environment:
+      - REDIS_HOST=redis # Имя сервиса redis в docker-compose
+      - REDIS_PORT=6379
