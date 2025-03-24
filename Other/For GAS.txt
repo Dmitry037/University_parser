@@ -1,6 +1,25 @@
+function onOpen(e) {
+  CalendarApp.getUi()
+      .createMenu('Расписание') // Название вашего меню
+      .addItem('Импортировать расписание', 'importScheduleFromMenu') // Пункт меню и функция, которую он вызывает
+      .addItem('Очистить расписание', 'deleteEventsNextWeekFromMenu')
+      .addToUi();
+}
+
+
+function importScheduleFromMenu() {
+  importSchedule(); // Вызываем основную функцию
+}
+
+function deleteEventsNextWeekFromMenu(){
+  deleteEventsNextWeek();
+}
+
+
+
 function importSchedule() {
-  //  const parsedSchedule = getScheduleFromExternalParser(); // Раскомментируйте, когда будет реальный парсер.
-  const parsedSchedule = getMockSchedule(); // Замените на getScheduleFromExternalParser() при реальном парсере.
+    const parsedSchedule = getScheduleFromExternalParser(); // Раскомментируйте, когда будет реальный парсер.
+
 
   if (!parsedSchedule) {
     Logger.log('Не удалось получить расписание.');
@@ -77,12 +96,6 @@ function importSchedule() {
 
           // Формируем название события
           const title = `${item.type}: ${item.discipline}`;
-          Logger.log(title);
-          // затыкаем странную проблему костылём
-          let [type,trash] = title.split(":");
-          Logger.log("Type:", type);
-          let savedtype = type;
-
 
           //определяем цвет
           let colorId;
@@ -126,77 +139,10 @@ function importSchedule() {
 }
 
 
-// Функция для получения расписания (заглушка)
-function getMockSchedule() {
-    return {
-        'понедельник': [
-          {
-            'time': '08:00 - 09:35',
-            'type': 'Практика',
-            'discipline': 'Военная кафедра',
-            'place': 'Военная кафедра - 4'
-          },
-          {
-            'time': '09:45 - 11:20',
-            'type': 'Практика',
-            'discipline': 'Военная кафедра',
-            'place': 'Военная кафедра - 4'
-          },
-          {
-            'time': '11:30 - 13:05',
-            'type': 'Практика',
-            'discipline': 'Военная кафедра',
-            'place': 'Военная кафедра - 4'
-          }
-        ],
-        'среда': [
-          {
-            'time': '08:00 - 09:35',
-            'type': 'Лекция',
-            'discipline': 'Эксплуатация двигателей внутреннего\n                                        сгорания',
-            'place': '103 - 5'
-          },
-          {
-            'time': '09:45 - 11:20',
-            'type': 'Лекция',
-            'discipline': 'Технология производства двигателей\n                                        летательных аппаратов',
-            'place': '128 - 5'
-          }
-        ],
-        'четверг': [
-          {
-            'time': '08:00 - 09:35',
-            'type': 'Лекция',
-            'discipline': 'Особенности моделирования и оптимизации\n                                        рабочего процесса с помощью компьютерных технологий',
-            'place': '103 - 5'
-          },
-          {
-            'time': '09:45 - 11:20',
-            'type': 'Практика',
-            'discipline': 'Особенности моделирования и оптимизации\n                                        рабочего процесса с помощью компьютерных технологий',
-            'place': '103 - 5'
-          }
-        ],
-        'пятница': [
-          {
-            'time': '09:45 - 11:20',
-            'type': 'Лекция',
-            'discipline': 'Бизнес-управление инновационным\n                                        производством',
-            'place': '210 - 5'
-          },
-          {
-            'time': '11:30 - 13:05',
-            'type': 'Практика',
-            'discipline': 'Бизнес-управление инновационным\n                                        производством',
-            'place': '210 - 5'
-          }
-        ]
-      };
-}
 
 // Функция для получения данных от внешнего парсера (замените URL)
 function getScheduleFromExternalParser() {
-  const url = 'https://your-parser-url.com/api/schedule'; //  URL вашего парсера!
+  const url = 'http://176.109.106.34:8000/api/myinfo/'; //  URL вашего парсера!
   try {
     const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true }); // Добавляем muteHttpExceptions
     const statusCode = response.getResponseCode();
@@ -236,4 +182,60 @@ function deleteTriggers() {
   for (const trigger of projectTriggers) {
     ScriptApp.deleteTrigger(trigger);
   }
+}
+
+function deleteEventsNextWeek() {
+  // Получаем календарь по умолчанию
+  const calendar = CalendarApp.getDefaultCalendar();
+
+  // Получаем текущую дату
+  const today = new Date();
+
+  // Определяем начало следующей недели (понедельник)
+  const startOfNextWeek = new Date(today);
+  const daysUntilMonday = (8 - today.getDay()) % 7 || 7; // Вычисляем, сколько дней до понедельника
+  startOfNextWeek.setDate(today.getDate() + daysUntilMonday);
+  startOfNextWeek.setHours(0, 0, 0, 0); // Устанавливаем начало дня
+
+  // Определяем конец следующей недели (воскресенье)
+  const endOfNextWeek = new Date(startOfNextWeek);
+  endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+  endOfNextWeek.setHours(23, 59, 59, 999); // Устанавливаем конец дня
+
+  // Получаем все события за следующую неделю
+  const events = calendar.getEvents(startOfNextWeek, endOfNextWeek);
+
+  // Перебираем все события
+  for (const event of events) {
+    const startTime = event.getStartTime();
+    const endTime = event.getEndTime();
+
+    // Получаем часы начала и окончания события
+    const startHour = startTime.getHours();
+    const startMinutes = startTime.getMinutes();
+    const endHour = endTime.getHours();
+    const endMinutes = endTime.getMinutes();
+
+    // Проверяем, попадает ли событие в диапазон 8:00–16:00
+    const startInRange = (startHour > 8 || (startHour === 8 && startMinutes >= 0));
+    const endInRange = (endHour < 16 || (endHour === 16 && endMinutes <= 0));
+
+    // Если событие полностью или частично попадает в диапазон 8:00–16:00, удаляем его
+    if (startInRange && endInRange) {
+      Logger.log(`Удаляется событие: ${event.getTitle()} (${startTime.toLocaleString()} - ${endTime.toLocaleString()})`);
+      event.deleteEvent();
+    }
+  }
+
+  Logger.log('Удаление событий завершено.');
+}
+
+// Функция для создания триггера (опционально, если нужно запускать автоматически)
+function createTimeDrivenTrigger() {
+  ScriptApp.newTrigger('deleteEventsNextWeek')
+    .timeBased()
+    .everyWeeks(1) // Запускать раз в неделю
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY) // Например, в воскресенье
+    .atHour(23) // В 23:00
+    .create();
 }
