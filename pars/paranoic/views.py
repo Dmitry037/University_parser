@@ -9,7 +9,7 @@ def my_info_view(request):
     week = calculate_weeks_since_start_date()
     cache_key = f'schedule_data_week_{week}'  # Ключ для кэша, уникальный для каждой недели
     cached_data = cache.get(cache_key)
-    if not (0 <= week <= 52):
+    if not (0 <= week <= 47):
         return JsonResponse({'error': 'Invalid week number'}, status=400)
     if cached_data:
         # Данные найдены в кэше, возвращаем их
