@@ -3,4 +3,4 @@ requests==2.32.3
 beautifulsoup4==4.13.3
 datetime
 django-redis
-django-ratelimit2
+django-ratelimit>=3.0
